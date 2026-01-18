@@ -200,33 +200,34 @@ function renderLogEntry(container, entry, project) {
         </div>
     `;
     
+    // Always show photo if available
     if (entry.photo) {
         html += `<img src="${entry.photo}" class="log-entry-thumb" alt="Photo">`;
     }
     
-    if (entry.transcription) {
-        const shortText = entry.transcription.length > 50 
-            ? entry.transcription.substring(0, 50) + '...' 
-            : entry.transcription;
-        html += `<div class="log-entry-text">${escapeHtml(shortText)}</div>`;
+    // Show transcription prominently - always visible, not just in expanded view
+    if (entry.transcription && entry.transcription.trim()) {
+        // Show full transcription, but limit height with CSS
+        html += `<div class="log-entry-text">${escapeHtml(entry.transcription)}</div>`;
     } else if (entry.audio) {
-        html += `<div class="log-entry-text" style="color: #888;">Audio recorded (no transcription)</div>`;
+        html += `<div class="log-entry-text" style="color: #888; font-style: italic;">Audio recorded (transcription pending or unavailable)</div>`;
+    } else if (entry.photo) {
+        html += `<div class="log-entry-text" style="color: #888; font-style: italic;">Photo only (no audio)</div>`;
     }
     
     html += `
         <div class="log-entry-detail">
-            ${entry.transcription ? `<div class="log-entry-detail-text">${escapeHtml(entry.transcription)}</div>` : ''}
             <div class="log-entry-detail-actions">
-                <button class="log-entry-btn" onclick="deleteEntry('${entry.id}', '${project}')">Delete</button>
+                <button class="log-entry-btn" onclick="deleteEntry('${entry.id}', '${escapeHtml(project)}')">Delete</button>
             </div>
         </div>
     `;
     
     entryDiv.innerHTML = html;
     
-    // Toggle expand on click
+    // Toggle expand on click (for delete button access)
     entryDiv.addEventListener('click', (e) => {
-        if (!e.target.classList.contains('log-entry-btn')) {
+        if (!e.target.classList.contains('log-entry-btn') && !e.target.closest('.log-entry-btn')) {
             entryDiv.classList.toggle('expanded');
         }
     });

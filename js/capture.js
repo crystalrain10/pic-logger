@@ -77,16 +77,22 @@ function loadCapturePage(container) {
         
         startCamera: async function() {
             try {
+                // R1 screen is 240x282px, use aspect ratio close to that
                 videoStream = await navigator.mediaDevices.getUserMedia({ 
                     video: { 
                         facingMode: 'environment',
-                        width: { ideal: 240 },
-                        height: { ideal: 320 }
+                        width: { ideal: 240, min: 240 },
+                        height: { ideal: 282, min: 282 },
+                        aspectRatio: { ideal: 240/282 }
                     } 
                 });
                 
                 if (this.videoElement) {
                     this.videoElement.srcObject = videoStream;
+                    // Set video element to use full available space
+                    this.videoElement.style.width = '100%';
+                    this.videoElement.style.height = '180px';
+                    this.videoElement.style.objectFit = 'cover';
                 }
                 this.updateStatus('Camera ready');
             } catch (error) {
@@ -103,10 +109,15 @@ function loadCapturePage(container) {
             
             try {
                 const canvas = document.createElement('canvas');
-                canvas.width = this.videoElement.videoWidth || 240;
-                canvas.height = this.videoElement.videoHeight || 320;
+                // Use R1 screen aspect ratio: 240x282
+                const targetWidth = 240;
+                const targetHeight = 282;
+                canvas.width = targetWidth;
+                canvas.height = targetHeight;
                 const ctx = canvas.getContext('2d');
-                ctx.drawImage(this.videoElement, 0, 0);
+                
+                // Draw video to canvas, covering the full area
+                ctx.drawImage(this.videoElement, 0, 0, targetWidth, targetHeight);
                 
                 capturedPhoto = canvas.toDataURL('image/jpeg', 0.8);
                 this.updateStatus('Photo captured');

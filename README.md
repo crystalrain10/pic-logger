@@ -53,7 +53,7 @@ pic-logger/
    - Select branch: `main`
    - Select folder: `/ (root)`
    - Click Save
-6. Your app will be available at: `https://yourusername.github.io/pic-logger/`
+6. Your app will be available at: `https://crystalrain10.github.io/pic-logger/`
 
 #### Option B: Netlify or Vercel
 

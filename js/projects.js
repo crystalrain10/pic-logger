@@ -140,6 +140,13 @@ function loadProjectsPage(container) {
         if (selected) {
             await setCurrentProject(selected);
             updateProjectDisplay();
+            // Refresh logs page if it's currently open
+            if (typeof window.currentPage === 'function' && window.currentPage() === 'logs') {
+                const content = document.getElementById('content');
+                if (content && typeof window.loadLogsPage === 'function') {
+                    await window.loadLogsPage(content);
+                }
+            }
         }
     });
     
