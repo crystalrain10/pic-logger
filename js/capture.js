@@ -77,22 +77,35 @@ function loadCapturePage(container) {
         
         startCamera: async function() {
             try {
-                // R1 screen is 240x282px, use aspect ratio close to that
-                videoStream = await navigator.mediaDevices.getUserMedia({ 
+                // R1 screen is 240x282px, request camera with proper aspect ratio
+                const constraints = {
                     video: { 
                         facingMode: 'environment',
-                        width: { ideal: 240, min: 240 },
-                        height: { ideal: 282, min: 282 },
-                        aspectRatio: { ideal: 240/282 }
+                        width: { ideal: 240 },
+                        height: { ideal: 282 }
                     } 
-                });
+                };
+                
+                videoStream = await navigator.mediaDevices.getUserMedia(constraints);
                 
                 if (this.videoElement) {
                     this.videoElement.srcObject = videoStream;
-                    // Set video element to use full available space
+                    
+                    // Wait for video metadata to load
+                    this.videoElement.addEventListener('loadedmetadata', () => {
+                        // Force video to fill container
+                        this.videoElement.style.width = '100%';
+                        this.videoElement.style.height = '190px';
+                        this.videoElement.style.objectFit = 'cover';
+                        this.videoElement.style.display = 'block';
+                    }, { once: true });
+                    
+                    // Set initial styles immediately
                     this.videoElement.style.width = '100%';
-                    this.videoElement.style.height = '180px';
+                    this.videoElement.style.height = '190px';
                     this.videoElement.style.objectFit = 'cover';
+                    this.videoElement.style.display = 'block';
+                    this.videoElement.style.backgroundColor = '#000';
                 }
                 this.updateStatus('Camera ready');
             } catch (error) {

@@ -194,40 +194,55 @@ function renderLogEntry(container, entry, project) {
         minute: '2-digit'
     });
     
+    // Preview text (truncated)
+    const previewText = entry.transcription && entry.transcription.trim() 
+        ? (entry.transcription.length > 40 ? entry.transcription.substring(0, 40) + '...' : entry.transcription)
+        : (entry.audio ? 'Audio recorded' : entry.photo ? 'Photo only' : 'No content');
+    
     let html = `
         <div class="log-entry-header">
             <span class="log-entry-time">${timeString}</span>
+            <span class="log-entry-preview-indicator">▶</span>
         </div>
     `;
     
-    // Always show photo if available
+    // Show thumbnail preview
     if (entry.photo) {
         html += `<img src="${entry.photo}" class="log-entry-thumb" alt="Photo">`;
     }
     
-    // Show transcription prominently - always visible, not just in expanded view
-    if (entry.transcription && entry.transcription.trim()) {
-        // Show full transcription, but limit height with CSS
-        html += `<div class="log-entry-text">${escapeHtml(entry.transcription)}</div>`;
-    } else if (entry.audio) {
-        html += `<div class="log-entry-text" style="color: #888; font-style: italic;">Audio recorded (transcription pending or unavailable)</div>`;
-    } else if (entry.photo) {
-        html += `<div class="log-entry-text" style="color: #888; font-style: italic;">Photo only (no audio)</div>`;
-    }
+    // Show preview text
+    html += `<div class="log-entry-preview-text">${escapeHtml(previewText)}</div>`;
     
+    // Expanded detail view (hidden by default)
     html += `
         <div class="log-entry-detail">
+            ${entry.photo ? `<img src="${entry.photo}" class="log-entry-full-image" alt="Photo">` : ''}
+            ${entry.transcription && entry.transcription.trim() 
+                ? `<div class="log-entry-full-text">
+                    <div class="log-entry-label">Transcription:</div>
+                    <div class="log-entry-transcription">${escapeHtml(entry.transcription)}</div>
+                   </div>` 
+                : entry.audio 
+                    ? `<div class="log-entry-full-text">
+                        <div class="log-entry-label">Audio:</div>
+                        <div class="log-entry-transcription" style="color: #888; font-style: italic;">Audio recorded (transcription unavailable)</div>
+                       </div>`
+                    : ''}
             <div class="log-entry-detail-actions">
-                <button class="log-entry-btn" onclick="deleteEntry('${entry.id}', '${escapeHtml(project)}')">Delete</button>
+                <button class="log-entry-btn" onclick="event.stopPropagation(); deleteEntry('${entry.id}', '${escapeHtml(project)}')">Delete</button>
             </div>
         </div>
     `;
     
     entryDiv.innerHTML = html;
     
-    // Toggle expand on click (for delete button access)
+    // Toggle expand on click
     entryDiv.addEventListener('click', (e) => {
-        if (!e.target.classList.contains('log-entry-btn') && !e.target.closest('.log-entry-btn')) {
+        // Don't toggle if clicking on buttons
+        if (!e.target.classList.contains('log-entry-btn') && 
+            !e.target.closest('.log-entry-btn') &&
+            !e.target.classList.contains('log-entry-full-image')) {
             entryDiv.classList.toggle('expanded');
         }
     });
