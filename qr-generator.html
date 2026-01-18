@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pic Logger QR Code Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+        
+        textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+        
+        .help-text {
+            font-size: 12px;
+            color: #666;
+            margin-top: 4px;
+        }
+        
+        button {
+            background: #FE5000;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+            width: 100%;
+            margin-top: 10px;
+        }
+        
+        button:hover {
+            background: #ff6600;
+        }
+        
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .qr-section {
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 1px solid #eee;
+            text-align: center;
+        }
+        
+        #qrCode {
+            margin: 20px 0;
+            display: inline-block;
+        }
+        
+        .json-preview {
+            background: #f8f8f8;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+        }
+        
+        .download-btn {
+            background: #333;
+            margin-top: 15px;
+        }
+        
+        .download-btn:hover {
+            background: #444;
+        }
+        
+        .error {
+            color: #d32f2f;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+    </style>
+    <script src="https://unpkg.com/qr-code-styling@1.6.0-rc.1/lib/qr-code-styling.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Pic Logger QR Code Generator</h1>
+        <p class="subtitle">Generate a QR code to scan with your Rabbit R1 device</p>
+        
+        <form id="qrForm">
+            <div class="form-group">
+                <label for="title">Title *</label>
+                <input type="text" id="title" name="title" value="Pic Logger" required>
+                <div class="help-text">Name of your creation</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="url">URL *</label>
+                <input type="url" id="url" name="url" placeholder="https://yourusername.github.io/pic-logger/" required>
+                <div class="help-text">Full URL where your app is hosted (GitHub Pages, Netlify, etc.)</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="description">Description</label>
+                <textarea id="description" name="description" placeholder="Capture photos and voice memos with transcription">Capture photos and voice memos with transcription</textarea>
+                <div class="help-text">Brief description of what the creation does</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="iconUrl">Icon URL</label>
+                <input type="url" id="iconUrl" name="iconUrl" placeholder="https://yourusername.github.io/pic-logger/icon.png">
+                <div class="help-text">URL to a 512x512px icon image (optional)</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="themeColor">Theme Color</label>
+                <input type="text" id="themeColor" name="themeColor" value="#FE5000" pattern="^#[0-9A-Fa-f]{6}$">
+                <div class="help-text">Hex color code (e.g., #FE5000 for Rabbit orange)</div>
+            </div>
+            
+            <button type="submit">Generate QR Code</button>
+        </form>
+        
+        <div class="json-preview" id="jsonPreview" style="display: none;">
+            <strong>JSON Data:</strong>
+            <pre id="jsonData"></pre>
+        </div>
+        
+        <div class="qr-section" id="qrSection" style="display: none;">
+            <h2>Your QR Code</h2>
+            <div id="qrCode"></div>
+            <button class="download-btn" id="downloadBtn">Download QR Code</button>
+        </div>
+    </div>
+    
+    <script>
+        let qrCodeStyling = null;
+        
+        document.getElementById('qrForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            generateQRCode();
+        });
+        
+        function generateQRCode() {
+            const data = {
+                title: document.getElementById('title').value.trim(),
+                url: document.getElementById('url').value.trim(),
+                description: document.getElementById('description').value.trim(),
+                iconUrl: document.getElementById('iconUrl').value.trim(),
+                themeColor: document.getElementById('themeColor').value || '#FE5000'
+            };
+            
+            // Validate
+            if (!data.title || !data.url) {
+                alert('Please fill in Title and URL');
+                return;
+            }
+            
+            // Show JSON preview
+            document.getElementById('jsonData').textContent = JSON.stringify(data, null, 2);
+            document.getElementById('jsonPreview').style.display = 'block';
+            
+            // Clear existing QR code
+            const qrContainer = document.getElementById('qrCode');
+            qrContainer.innerHTML = '';
+            
+            // Create QR code
+            const qrData = JSON.stringify(data);
+            
+            qrCodeStyling = new QRCodeStyling({
+                width: 300,
+                height: 300,
+                type: "canvas",
+                data: qrData,
+                margin: 10,
+                qrOptions: {
+                    typeNumber: 0,
+                    mode: "Byte",
+                    errorCorrectionLevel: "M"
+                },
+                dotsOptions: {
+                    color: "#000000",
+                    type: "rounded"
+                },
+                backgroundOptions: {
+                    color: "#ffffff"
+                },
+                cornersSquareOptions: {
+                    color: "#000000",
+                    type: "extra-rounded"
+                },
+                cornersDotOptions: {
+                    color: "#000000",
+                    type: "dot"
+                }
+            });
+            
+            qrCodeStyling.append(qrContainer);
+            
+            // Show QR section
+            document.getElementById('qrSection').style.display = 'block';
+        }
+        
+        document.getElementById('downloadBtn').addEventListener('click', function() {
+            if (!qrCodeStyling) {
+                alert('Please generate a QR code first');
+                return;
+            }
+            
+            qrCodeStyling.download({
+                name: "pic-logger-qr-code",
+                extension: "png"
+            });
+        });
+    </script>
+</body>
+</html>
