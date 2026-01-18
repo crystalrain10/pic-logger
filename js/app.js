@@ -81,10 +81,34 @@ async function loadPage(pageName) {
 
 // Hardware button listeners
 function initializeHardwareListeners() {
-    // PTT button - long press to start log entry
+    // PTT button - short press to capture photo
+    window.addEventListener('sideClick', () => {
+        if (currentPage === 'capture' && pageModules.capture) {
+            // Call the capturePhoto method from the module
+            const captureModule = pageModules.capture;
+            if (captureModule && typeof captureModule.capturePhoto === 'function') {
+                captureModule.capturePhoto();
+            }
+        }
+    });
+    
+    // PTT button - long press start to begin recording audio
     window.addEventListener('longPressStart', () => {
         if (currentPage === 'capture' && pageModules.capture) {
-            pageModules.capture.startLogEntry();
+            const captureModule = pageModules.capture;
+            if (captureModule && typeof captureModule.startRecording === 'function') {
+                captureModule.startRecording();
+            }
+        }
+    });
+    
+    // PTT button - long press end to stop recording audio
+    window.addEventListener('longPressEnd', () => {
+        if (currentPage === 'capture' && pageModules.capture) {
+            const captureModule = pageModules.capture;
+            if (captureModule && typeof captureModule.stopRecording === 'function') {
+                captureModule.stopRecording();
+            }
         }
     });
     

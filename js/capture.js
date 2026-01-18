@@ -6,6 +6,7 @@ let recordedChunks = [];
 let isRecording = false;
 let capturedPhoto = null;
 let recordedAudio = null;
+let currentTranscription = '';
 
 // Load capture page
 function loadCapturePage(container) {
@@ -54,24 +55,26 @@ function loadCapturePage(container) {
         },
         
         setupEventListeners: function() {
+            const self = this;
+            
             document.getElementById('capturePhotoBtn').addEventListener('click', () => {
-                this.capturePhoto();
+                self.capturePhoto();
             });
             
             document.getElementById('recordAudioBtn').addEventListener('click', () => {
                 if (isRecording) {
-                    this.stopRecording();
+                    self.stopRecording();
                 } else {
-                    this.startRecording();
+                    self.startRecording();
                 }
             });
             
             document.getElementById('saveEntryBtn').addEventListener('click', () => {
-                this.saveEntry();
+                self.saveEntry();
             });
             
             document.getElementById('cancelBtn').addEventListener('click', () => {
-                this.cancel();
+                self.cancel();
             });
         },
         
@@ -145,6 +148,7 @@ function loadCapturePage(container) {
             try {
                 audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 recordedChunks = [];
+                currentTranscription = '';
                 
                 mediaRecorder = new MediaRecorder(audioStream, {
                     mimeType: 'audio/webm;codecs=opus'
@@ -221,15 +225,21 @@ function loadCapturePage(container) {
             
             this.updateStatus('Saving...');
             
-            // If we have audio, transcribe it
+            // Transcribe audio using R1 LLM dictation
             let transcription = '';
             if (recordedAudio && window.transcribeAudio) {
                 try {
+                    this.updateStatus('Transcribing...');
                     transcription = await window.transcribeAudio(recordedAudio);
+                    if (!transcription || transcription.trim() === '') {
+                        transcription = 'Audio recorded (transcription unavailable)';
+                    }
                 } catch (error) {
                     console.error('Transcription error:', error);
-                    transcription = 'Transcription failed';
+                    transcription = 'Audio recorded (transcription failed)';
                 }
+            } else if (recordedAudio) {
+                transcription = 'Audio recorded (transcription not available)';
             }
             
             // Save log entry
@@ -287,22 +297,6 @@ function loadCapturePage(container) {
             }
         },
         
-        startLogEntry: function() {
-            // Called by PTT button long press
-            if (!window.getCurrentProject || !window.getCurrentProject()) {
-                this.updateStatus('Select a project first');
-                return;
-            }
-            
-            // Auto-capture photo and start recording
-            setTimeout(() => {
-                this.capturePhoto();
-            }, 100);
-            
-            setTimeout(() => {
-                this.startRecording();
-            }, 500);
-        },
         
         updateStatus: function(message) {
             if (this.statusElement) {
